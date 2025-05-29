@@ -99,6 +99,23 @@ class SammDev_Custom_Endpoints_Admin {
 				)
 			)
 		);
+
+		//CurrentPost
+		register_rest_route(
+			'sammdev-custom-endpoints/v1',
+			'/current_post',
+			array(
+				'method' =>'GET',
+				'callback' => array( $this, 'sd_ce_get_post' ),
+				'permission_callback' => '__return_true',
+				'args' => array(
+					'id' => array(
+							'required' => true,
+							'validate_callback' => array($this, 'validate_number')
+					)
+				)
+			),
+		);
 	}
 
 	public function sd_ce_test_endpoint($request) {
@@ -132,7 +149,6 @@ class SammDev_Custom_Endpoints_Admin {
 				'id' => $post->ID,
 				'title' => $post->post_title,
 				'excerpt' => $excerpt,
-				'content' => $post->post_content,
 				'date' => $post->post_modified,
 				'featured_image' => get_the_post_thumbnail_url($post->ID)
 			);
@@ -144,4 +160,26 @@ class SammDev_Custom_Endpoints_Admin {
 
 		return new WP_REST_Response( $response, 200 );
 	}
+
+	public function sd_ce_get_post($request) {
+		$post = get_post($request->get_param('id'));
+
+		if (!$post) {
+			return new WP_Error( 'post_not_found', 'Post not found', array( 'status' => 404 ) );
+		}
+
+		if ($post->post_status !== 'publish') {
+			return new WP_Error( 'post_not_published', 'Post not published', array( 'status' => 404 ) );
+		}
+
+		$response = array(
+			'id' => $post->ID,
+			'title' => $post->post_title,
+			'content' => $post->post_content,
+			'date' => $post->post_modified,
+		);
+
+		return new WP_REST_Response( $response, 200 );
+	}
 }
+
